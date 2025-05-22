@@ -20,7 +20,7 @@ namespace Micro_earpiece
         private static List<bool> analyze_beeps = [];
 
         /// <summary>
-        /// Список всех аудиофайлов
+        /// Список всех аудиофайлов в текущей директории
         /// </summary>
         private static List<string> audioFiles = [];
 
@@ -29,19 +29,17 @@ namespace Micro_earpiece
         /// </summary>
         private static bool isPlaying = false;
 
+        /// <summary>
+        /// Проверяет правильность названий всех папок
+        /// </summary>
+        /// <exception cref="ArgumentException"></exception>
         public static void CheckAudioFiles()
         {
-
-            string[] formats = { "*.mp3", "*.wav", "*.m4a" };
-
             audioFolder = Path.Combine(
                 Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName,
                 MainFold);
 
-            #region Проверяет правильность названий всех папок
-
             string[] folders = Directory.GetDirectories(audioFolder, "*", SearchOption.AllDirectories);
-
             foreach (string folder in folders)
             {
                 var name = Path.GetFileName(folder);
@@ -49,19 +47,23 @@ namespace Micro_earpiece
                 if (!arr.Any(x => Path.GetFileName(x)[..^4] == name))
                     throw new ArgumentException("Неверно выстроены пути аудиофайлов");
             }
+        }
 
-            #endregion
-
-            #region Сохраняет все аудиозаписи в список
-
+        /// <summary>
+        /// Первоначальные настройки
+        /// </summary>
+        public static void InitSettings()
+        {
+            string[] formats = { "*.mp3", "*.wav", "*.m4a" };
+            // Сохраняет все аудиозаписи в список
             foreach (string format in formats)
             {
-                string[] found = Directory.GetFiles(audioFolder, format, SearchOption.AllDirectories);
+                string[] found = Directory.GetFiles(audioFolder, format);
                 audioFiles.AddRange(found);
             }
-
-            #endregion
+            AudioPlay($"{audioFolder}/3) Необходимое условие сходимости ряда.m4a");
         }
+
         /// <summary>
         /// Считывает Гц микрофона и обрабатывает её
         /// </summary>
@@ -116,18 +118,25 @@ namespace Micro_earpiece
                     BeepDetected();
                 analyze_beeps.Clear();
             }
+
+            if (isPlaying) return;
         }
 
         /// <summary>
         /// Вызывается при уверенном обнаружении писка заданной частоты
         /// </summary>
-        private static async void BeepDetected()
+        private static void BeepDetected()
         {
             WriteLine("Обнаружен писк!");
+        }
 
-            if (isPlaying) return;
-
-            using (var audioFile = new AudioFileReader($"{audioFolder}/3) Необходимое условие сходимости ряда.m4a"))
+        /// <summary>
+        /// Воспроизведение аудиозаписи
+        /// </summary>
+        /// <param name="fname"></param>
+        private static async void AudioPlay(string fname)
+        {
+            using (var audioFile = new AudioFileReader(fname))
             using (var outputDevice = new WaveOutEvent())
             {
                 outputDevice.Init(audioFile);
