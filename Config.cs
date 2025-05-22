@@ -25,7 +25,7 @@
         /// <summary>
         /// Количество последовательных обнаружений писка для подтверждения его валидности
         /// </summary>
-        public const int cnt_analyse_beeps = 7;
+        public const int CountValidityBeeps = 7;
 
         /// <summary>
         /// Название главной папки, где хранятся аудиофайлы и подпапки

@@ -10,19 +10,24 @@ namespace Micro_earpiece
     class Funcs
     {
         /// <summary>
-        /// Путь к главной папке, где хранятся аудиофайлы и подпапки
+        /// Путь к папке, откуда берутся аудиофайлы
         /// </summary>
         private static string audioFolder;
     
         /// <summary>
         /// Список флагов, хранящий результаты последних проверок на наличие писка.
         /// </summary>
-        private static List<bool> analyze_beeps = [];
+        private static List<bool> analyzeBeeps = [];
 
         /// <summary>
-        /// Список всех аудиофайлов в текущей директории
+        /// Список всех путей аудиофайлов в текущей директории
         /// </summary>
-        private static List<string> audioFiles = [];
+        private static List<string> audioFilesPath = [];
+
+        /// <summary>
+        /// Текущий путь к аудиофайлу
+        /// </summary>
+        public static string curlFilePath;
 
         /// <summary>
         /// Флаг на воспроизведение аудио
@@ -30,15 +35,38 @@ namespace Micro_earpiece
         private static bool isPlaying = false;
 
         /// <summary>
-        /// Проверяет правильность названий всех папок
+        /// Токен чтобы прервать поток AudioPlay
         /// </summary>
-        /// <exception cref="ArgumentException"></exception>
-        public static void CheckAudioFiles()
+        private static CancellationTokenSource cancelToken;
+
+        /// <summary>
+        /// Первоначальные настройки
+        /// </summary>
+        public static void InitSettings()
         {
             audioFolder = Path.Combine(
                 Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName,
                 MainFold);
 
+            CheckAudioFiles();
+
+            string[] formats = { "*.mp3", "*.wav", "*.m4a" };
+            // Сохраняет все аудиозаписи в список
+            foreach (string format in formats)
+            {
+                string[] found = Directory.GetFiles(audioFolder, format);
+                audioFilesPath.AddRange(found);
+            }
+
+            curlFilePath = audioFilesPath[0];
+        }
+
+        /// <summary>
+        /// Проверяет правильность названий всех папок
+        /// </summary>
+        /// <exception cref="ArgumentException"></exception>
+        public static void CheckAudioFiles()
+        {
             string[] folders = Directory.GetDirectories(audioFolder, "*", SearchOption.AllDirectories);
             foreach (string folder in folders)
             {
@@ -47,21 +75,6 @@ namespace Micro_earpiece
                 if (!arr.Any(x => Path.GetFileName(x)[..^4] == name))
                     throw new ArgumentException("Неверно выстроены пути аудиофайлов");
             }
-        }
-
-        /// <summary>
-        /// Первоначальные настройки
-        /// </summary>
-        public static void InitSettings()
-        {
-            string[] formats = { "*.mp3", "*.wav", "*.m4a" };
-            // Сохраняет все аудиозаписи в список
-            foreach (string format in formats)
-            {
-                string[] found = Directory.GetFiles(audioFolder, format);
-                audioFiles.AddRange(found);
-            }
-            AudioPlay($"{audioFolder}/3) Необходимое условие сходимости ряда.m4a");
         }
 
         /// <summary>
@@ -107,19 +120,21 @@ namespace Micro_earpiece
 
             // Проверка на писк
             if (freq > BeepHz - RangeBeepHz && freq < BeepHz + RangeBeepHz)
-                analyze_beeps.Add(true);
+                analyzeBeeps.Add(true);
             else
-                analyze_beeps.Add(false);
+                analyzeBeeps.Add(false);
 
             // Проверка писка на длительность cnt_analyse_beeps
-            if (analyze_beeps.Count >= cnt_analyse_beeps)
+            if (analyzeBeeps.Count >= CountValidityBeeps)
             {
-                if (analyze_beeps.All(x => x))
+                if (analyzeBeeps.All(x => x))
                     BeepDetected();
-                analyze_beeps.Clear();
+                analyzeBeeps.Clear();
             }
 
             if (isPlaying) return;
+
+            AudioPlay(curlFilePath);
         }
 
         /// <summary>
@@ -128,29 +143,82 @@ namespace Micro_earpiece
         private static void BeepDetected()
         {
             WriteLine("Обнаружен писк!");
+
+            string check = Path.Combine(audioFolder, Path.GetFileNameWithoutExtension(curlFilePath));
+
+            if (!Directory.Exists(check))
+                return;
+
+            audioFolder = check;
+           
+            string[] formats = { "*.mp3", "*.wav", "*.m4a" };
+            audioFilesPath = [];
+            // Сохраняет все аудиозаписи в список
+            foreach (string format in formats)
+            {
+                string[] found = Directory.GetFiles(audioFolder, format);
+                audioFilesPath.AddRange(found);
+            }
+
+            curlFilePath = audioFilesPath[0];
+            AudioStop();
         }
 
         /// <summary>
         /// Воспроизведение аудиозаписи
         /// </summary>
         /// <param name="fname"></param>
-        private static async void AudioPlay(string fname)
+        public static async void AudioPlay(string path)
         {
-            using (var audioFile = new AudioFileReader(fname))
+            cancelToken = new CancellationTokenSource();
+            isPlaying = true;
+
+            using (var audioFile = new AudioFileReader(path))
             using (var outputDevice = new WaveOutEvent())
             {
                 outputDevice.Init(audioFile);
                 outputDevice.Play();
 
-                isPlaying = true;
-
-                while (outputDevice.PlaybackState == PlaybackState.Playing)
+                try
                 {
-                    await Task.Delay(1000);
+                    while (outputDevice.PlaybackState == PlaybackState.Playing)
+                    {
+                        // Проверяем отмену
+                        cancelToken.Token.ThrowIfCancellationRequested();
+                        await Task.Delay(1000, cancelToken.Token);
+                    }
                 }
-
-                isPlaying = false;
+                catch (OperationCanceledException)
+                {
+                    // Останавливаем воспроизведение
+                    outputDevice.Stop();             
+                }
             }
+
+            isPlaying = false;
+
+            NextAudio();
+        }
+
+        /// <summary>
+        /// Переключает на следующий аудиофайл
+        /// </summary>
+        private static void NextAudio()
+        {
+            int curlInd = audioFilesPath.IndexOf(curlFilePath);
+
+            if (curlInd == audioFilesPath.Count - 1)
+                curlFilePath = audioFilesPath[0];
+            else
+                curlFilePath = audioFilesPath[curlInd + 1];
+        }
+
+        /// <summary>
+        /// Останавливает текущую аудиозапись
+        /// </summary>
+        public static void AudioStop()
+        {   
+            cancelToken.Cancel();
         }
     }
 }

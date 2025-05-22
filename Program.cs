@@ -10,7 +10,7 @@ namespace Micro_earpiece
     {
         static void Main()
         {
-            CheckAudioFiles();
+            InitSettings();
 
             var waveIn = new WaveInEvent
             {
