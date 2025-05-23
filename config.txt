@@ -1,0 +1,6 @@
+SampleRate = 44100
+BufferSize = 2048
+BeepHz = 1119
+RangeBeepHz = 100
+CountValidityBeeps = 15
+MainFold = AudioFiles

@@ -36,5 +36,35 @@
         /// Доступные форматы аудиофайлов
         /// </summary>
         public static readonly string[] Formats = { "*.mp3", "*.wav", "*.m4a" };
+
+        /// <summary>
+        /// Создаёт конфиг файл
+        /// </summary>
+        /// <param name="fname"></param>
+        public static void CreateConfigFile(string fname)
+        {
+            string path_config = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, fname);
+
+            if (File.Exists(path_config))
+                return;
+
+            using (StreamWriter sw = new StreamWriter(File.Create(path_config)))
+            {
+                sw.WriteLine($"SampleRate = {SampleRate}");
+                sw.WriteLine($"BufferSize = {BufferSize}");
+                sw.WriteLine($"BeepHz = {BeepHz}");
+                sw.WriteLine($"RangeBeepHz = {RangeBeepHz}");
+                sw.WriteLine($"CountValidityBeeps = {CountValidityBeeps}");
+                sw.WriteLine($"MainFold = {MainFold}");
+            }
+        }
+
+        /// <summary>
+        /// Читает конфиг файл
+        /// </summary>
+        public static void ReadConfig()
+        {
+
+        }
     }
 }
