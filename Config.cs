@@ -20,12 +20,12 @@
         /// <summary>
         /// Допустимое отклонение частоты писка от опорной (в герцах)
         /// </summary>
-        public const int RangeBeepHz = 10000;
+        public const int RangeBeepHz = 100;
 
         /// <summary>
         /// Количество последовательных обнаружений писка для подтверждения его валидности
         /// </summary>
-        public const int CountValidityBeeps = 7;
+        public const int CountValidityBeeps = 15;
 
         /// <summary>
         /// Название главной папки, где хранятся аудиофайлы и подпапки

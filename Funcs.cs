@@ -7,6 +7,9 @@ using static System.Console;
 
 namespace Micro_earpiece
 {
+    /// <summary>
+    /// Хранит основные функции для работы с микронаушником
+    /// </summary>
     class Funcs
     {
         #region Инициализация полей
@@ -48,12 +51,11 @@ namespace Micro_earpiece
         /// </summary>
         public static void InitSettings()
         {
-            folderPath = Path.Combine(
-                Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName,
-                MainFold);
+            folderPath = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, MainFold);
 
             CheckAudioFiles();
 
+            audioPaths = [];
             foreach (string format in Formats)
             {
                 string[] found = Directory.GetFiles(folderPath, format);
@@ -80,7 +82,7 @@ namespace Micro_earpiece
         }
 
         /// <summary>
-        /// Считывает Гц микрофона и обрабатывает её
+        /// Считывает звук микрофона и обрабатывает его
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -118,7 +120,7 @@ namespace Micro_earpiece
             }
 
             double freq = (double)maxIndex * SampleRate / BufferSize;
-            WriteLine($"Частота: {freq:f1} Гц");
+            //WriteLine($"Частота: {freq:f1} Гц");
 
             /// Проверка на писк
             if (freq > BeepHz - RangeBeepHz && freq < BeepHz + RangeBeepHz)
@@ -147,8 +149,19 @@ namespace Micro_earpiece
             WriteLine("Обнаружен писк!");
 
             string check = Path.Combine(folderPath, Path.GetFileNameWithoutExtension(curlAudioPath));
+            WriteLine($"Check: {check},\nfolderPath: {folderPath}");
             if (!Directory.Exists(check))
+            {
+                WriteLine("Flag1");
+                if (folderPath != Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, MainFold))
+                {
+                    InitSettings();
+                    AudioStop();
+                    WriteLine("Flag2");
+                }
+
                 return;
+            }
 
             folderPath = check;
            

@@ -1,7 +1,6 @@
 ﻿using NAudio.Wave;
 
 using static Micro_earpiece.Config;
-using static Micro_earpiece.Funcs;
 using static System.Console;
 
 namespace Micro_earpiece
@@ -10,7 +9,7 @@ namespace Micro_earpiece
     {
         static void Main()
         {
-            InitSettings();
+            Funcs.InitSettings();
 
             var waveIn = new WaveInEvent
             {
@@ -18,7 +17,7 @@ namespace Micro_earpiece
                 BufferMilliseconds = (int)((double)BufferSize / SampleRate * 1000.0)
             };
 
-            waveIn.DataAvailable += OnDataAvailable;
+            waveIn.DataAvailable += Funcs.OnDataAvailable;
             waveIn.StartRecording();
 
             WriteLine("Слушаю микрофон... Нажми Enter для выхода.");
