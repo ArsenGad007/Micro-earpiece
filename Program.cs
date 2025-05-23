@@ -1,8 +1,8 @@
-﻿using static Micro_earpiece.Config;
+﻿using NAudio.Wave;
+
+using static Micro_earpiece.Config;
 using static Micro_earpiece.Funcs;
 using static System.Console;
-
-using NAudio.Wave;
 
 namespace Micro_earpiece
 {
