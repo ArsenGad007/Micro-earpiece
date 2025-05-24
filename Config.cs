@@ -1,54 +1,96 @@
-﻿namespace Micro_earpiece
+﻿using System.Xml.Linq;
+
+namespace Micro_earpiece
 {
     class Config
     {
         /// <summary>
         /// Частота дискретизации
         /// </summary>
-        public const int SampleRate = 44100;
+        public static int SampleRate { get; private set; } = 44100;
 
         /// <summary>
         /// Размер буфера
         /// </summary>
-        public const int BufferSize = 2048;
+        public static int BufferSize { get; private set; } = 2048;
 
         /// <summary>
         /// Опорная частота в герцах, используемая для обнаружения писка
         /// </summary>
-        public const int BeepHz = 1119;
+        public static int BeepHz { get; private set; } = 1119;
 
         /// <summary>
         /// Допустимое отклонение частоты писка от опорной (в герцах)
         /// </summary>
-        public const int RangeBeepHz = 100;
+        public static int RangeBeepHz { get; private set; } = 100;
 
         /// <summary>
         /// Количество последовательных обнаружений писка для подтверждения его валидности
         /// </summary>
-        public const int CountValidityBeeps = 15;
+        public static int CountValidityBeeps { get; private set; } = 15;
 
         /// <summary>
         /// Название главной папки, где хранятся аудиофайлы и подпапки
         /// </summary>
-        public const string MainFold = "AudioFiles";
+        public static string MainFold { get; private set; } = "AudioFiles";
 
         /// <summary>
         /// Доступные форматы аудиофайлов
         /// </summary>
-        public static readonly string[] Formats = { "*.mp3", "*.wav", "*.m4a" };
+        public static string[] Formats { get; private set; } = { "*.mp3", "*.wav", "*.m4a" };
+
+        /// <summary>
+        /// Путь к конфиг файлу
+        /// </summary>
+        private static string pathConfig = "";
+
+        /// <summary>
+        /// Читает конфиг файл
+        /// </summary>
+        public static void ReadConfig()
+        {
+            if (!File.Exists(pathConfig))
+                CreateConfigFile("config.txt");
+
+            string[][] read = File.ReadAllLines(pathConfig)
+                .Select(line => line.Split(new char[] { ' ', ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToArray())
+                .ToArray();
+
+            if (read.Length != 6)
+            {
+                PrintError();
+                return;
+            }
+
+            string[] settings = { "SampleRate", "BufferSize", "BeepHz", "RangeBeepHz", "CountValidityBeeps", "MainFold" };
+
+            for (int i = 0; i < read.Length; i++)
+                if (read[i][0] != settings[i] || read[i].Length != 3)
+                {
+                    PrintError();
+                    return;
+                }
+
+            SampleRate = int.Parse(read[0][2]);
+            BufferSize = int.Parse(read[1][2]);
+            BeepHz = int.Parse(read[2][2]);
+            RangeBeepHz = int.Parse(read[3][2]);
+            CountValidityBeeps = int.Parse(read[4][2]);
+            MainFold = read[5][2];
+        }
 
         /// <summary>
         /// Создаёт конфиг файл
         /// </summary>
         /// <param name="fname"></param>
-        public static void CreateConfigFile(string fname)
+        private static void CreateConfigFile(string fname)
         {
-            string path_config = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, fname);
+            pathConfig = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, fname);
 
-            if (File.Exists(path_config))
+            if (File.Exists(pathConfig))
                 return;
 
-            using (StreamWriter sw = new StreamWriter(File.Create(path_config)))
+            using (StreamWriter sw = new StreamWriter(File.Create(pathConfig)))
             {
                 sw.WriteLine($"SampleRate = {SampleRate}");
                 sw.WriteLine($"BufferSize = {BufferSize}");
@@ -60,11 +102,8 @@
         }
 
         /// <summary>
-        /// Читает конфиг файл
+        /// Печать ошибки
         /// </summary>
-        public static void ReadConfig()
-        {
-
-        }
+        private static void PrintError() => Console.WriteLine("Ошибка прочтения конфиг файла. Используются заводские настройки.");
     }
 }

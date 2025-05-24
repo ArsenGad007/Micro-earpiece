@@ -10,7 +10,7 @@ namespace Micro_earpiece
     {
         static void Main()
         {
-            CreateConfigFile("config.txt");
+            ReadConfig();
             InitSettings();
 
             var waveIn = new WaveInEvent
