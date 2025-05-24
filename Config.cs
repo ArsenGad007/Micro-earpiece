@@ -1,6 +1,4 @@
-﻿using System.Xml.Linq;
-
-namespace Micro_earpiece
+﻿namespace Micro_earpiece
 {
     class Config
     {
@@ -50,7 +48,7 @@ namespace Micro_earpiece
         public static void ReadConfig()
         {
             if (!File.Exists(pathConfig))
-                CreateConfigFile("config.txt");
+                CreateConfig("config.txt");
 
             string[][] read = File.ReadAllLines(pathConfig)
                 .Select(line => line.Split(new char[] { ' ', ';', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToArray())
@@ -71,11 +69,24 @@ namespace Micro_earpiece
                     return;
                 }
 
-            SampleRate = int.Parse(read[0][2]);
-            BufferSize = int.Parse(read[1][2]);
-            BeepHz = int.Parse(read[2][2]);
-            RangeBeepHz = int.Parse(read[3][2]);
-            CountValidityBeeps = int.Parse(read[4][2]);
+            if (int.TryParse(read[0][2], out int sr) &&
+                int.TryParse(read[1][2], out int bs) &&
+                int.TryParse(read[2][2], out int bh) &&
+                int.TryParse(read[3][2], out int rbh) &&
+                int.TryParse(read[4][2], out int cvb))
+            {
+                SampleRate = sr;
+                BufferSize = bs;
+                BeepHz = bh;
+                RangeBeepHz = rbh;
+                CountValidityBeeps = cvb;
+            }
+            else
+            {
+                PrintError();
+                return;
+            }
+
             MainFold = read[5][2];
         }
 
@@ -83,7 +94,7 @@ namespace Micro_earpiece
         /// Создаёт конфиг файл
         /// </summary>
         /// <param name="fname"></param>
-        private static void CreateConfigFile(string fname)
+        private static void CreateConfig(string fname)
         {
             pathConfig = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, fname);
 
