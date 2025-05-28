@@ -1,1 +1,1 @@
-<img src="project_structure.svg" width="200">
+<img src="project_structure.svg" width="1200">
