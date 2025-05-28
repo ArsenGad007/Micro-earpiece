@@ -35,7 +35,7 @@
         /// <summary>
         /// Доступные форматы аудиофайлов
         /// </summary>
-        public static string[] Formats { get; private set; } = { "*.mp3", "*.wav", "*.m4a" };
+        public static string[] Formats { get; } = { "*.mp3", "*.wav", "*.m4a" };
 
         /// <summary>
         /// Путь к конфиг файлу
