@@ -3,7 +3,7 @@ using System.Numerics;
 using NAudio.Wave;
 
 using static Micro_earpiece.Config;
-using static System.Console;
+using Micro_earpiece_solo;
 
 namespace Micro_earpiece
 {
@@ -38,6 +38,11 @@ namespace Micro_earpiece
         /// Флаг на воспроизведение аудио
         /// </summary>
         private static bool isPlaying = false;
+
+        /// <summary>
+        /// Задержка после обнаружения писка
+        /// </summary>
+        private static DateTime beepDelay = DateTime.Now;
 
         /// <summary>
         /// Токен чтобы прервать поток AudioPlay
@@ -77,7 +82,7 @@ namespace Micro_earpiece
                 var name = Path.GetFileName(folder);
                 string[] arr = Directory.GetFiles(Directory.GetParent(folder).ToString());
                 if (!arr.Any(x => Path.GetFileNameWithoutExtension(x) == name))
-                    throw new ArgumentException("Неверно выстроены пути аудиофайлов");
+                    Logging.ErrorWriteLog(new ArgumentException("Неверно выстроены пути аудиофайлов"));
             }
         }
 
@@ -120,7 +125,7 @@ namespace Micro_earpiece
             }
 
             double freq = (double)maxIndex * SampleRate / BufferSize;
-            //WriteLine($"Частота: {freq:f1} Гц");
+            Console.WriteLine($"Частота: {freq:f1} Гц");
 
             /// Проверка на писк
             if (freq > BeepHz - RangeBeepHz && freq < BeepHz + RangeBeepHz)
@@ -146,18 +151,26 @@ namespace Micro_earpiece
         /// </summary>
         private static void BeepDetected()
         {
-            WriteLine("Обнаружен писк!");
+            Logging.WriteLog("Обнаружен писк!");
+
+            if (DateTime.Now < beepDelay)
+            {
+                Logging.WriteLog("Задержка");
+                return;
+            }
+
+            beepDelay = DateTime.Now.AddSeconds(2);
 
             string check = Path.Combine(folderPath, Path.GetFileNameWithoutExtension(curlAudioPath));
-            WriteLine($"Check: {check},\nfolderPath: {folderPath}");
+            // WriteLine($"Check: {check},\nfolderPath: {folderPath}");
             if (!Directory.Exists(check))
             {
-                WriteLine("Flag1");
+                // WriteLine("Flag1");
                 if (folderPath != Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, MainFold))
                 {
                     InitSettings();
                     AudioStop();
-                    WriteLine("Flag2");
+                    // WriteLine("Flag2");
                 }
 
                 return;
@@ -182,6 +195,8 @@ namespace Micro_earpiece
         /// <param name="fname"></param>
         private static async void AudioPlay(string path)
         {
+            Logging.WriteLog($"Воспроизводиться: {path}");
+
             cancelToken = new CancellationTokenSource();
             isPlaying = true;
 
@@ -215,7 +230,7 @@ namespace Micro_earpiece
         private static void NextAudio()
         {
             if (audioPaths == new List<string>())
-                throw new ArgumentException("Список audioPaths - пустой");
+                Logging.ErrorWriteLog(new ArgumentException("Список audioPaths - пустой"));
                 
             int curlInd = audioPaths.IndexOf(curlAudioPath);
 

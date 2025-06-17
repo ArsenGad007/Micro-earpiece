@@ -1,4 +1,6 @@
-﻿namespace Micro_earpiece
+﻿using Micro_earpiece_solo;
+
+namespace Micro_earpiece
 {
     class Config
     {
@@ -25,7 +27,7 @@
         /// <summary>
         /// Количество последовательных обнаружений писка для подтверждения его валидности
         /// </summary>
-        public static int CountValidityBeeps { get; private set; } = 15;
+        public static int CountValidityBeeps { get; private set; } = 6;
 
         /// <summary>
         /// Название главной папки, где хранятся аудиофайлы и подпапки
@@ -88,6 +90,8 @@
             }
 
             MainFold = read[5][2];
+
+            Logging.WriteLog("Настройки успешно прочитаны из конфиг файла");
         }
 
         /// <summary>
@@ -110,11 +114,13 @@
                 sw.WriteLine($"CountValidityBeeps = {CountValidityBeeps}");
                 sw.WriteLine($"MainFold = {MainFold}");
             }
+
+            Logging.WriteLog("Создан конфиг файл");
         }
 
         /// <summary>
         /// Печать ошибки
         /// </summary>
-        private static void PrintError() => Console.WriteLine("Ошибка прочтения конфиг файла. Используются заводские настройки.");
+        private static void PrintError() => Logging.ErrorWriteLog("Ошибка прочтения конфиг файла. Используются заводские настройки.");
     }
 }
